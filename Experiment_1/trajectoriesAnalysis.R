@@ -1,8 +1,7 @@
 library(tidyverse)
 scale = 0.5625
 # Compute distance to target and statistics for 2 and 3 taps
-setwd("~/Research/DrawRhythm/TickTack/")
-ghost <- read.csv("./Data/usa_2013.csv")
+ghost <- read.csv("../Data/usa_2013.csv")
 files <- list.files(".", pattern="path_follow_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)
 distances <- setNames(data.frame(matrix(ncol = 3, nrow = 0)), c("taps", "mean", "sd"))
 for (cf in files) {
@@ -23,7 +22,6 @@ aggregate(distances, by = list(distances$taps), FUN = mean)
 
 
 # Compute histograms of magnitude velocity and direction during exploration
-setwd("~/Research/DrawRhythm/TickTack/")
 files <- list.files(".", pattern="path_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)
 
 traj2taps <- data.frame()
@@ -50,6 +48,8 @@ for (cf in files) {
   if ("taps...3" %in% colnames(rc)) {
     print(cf)
     traj3taps <- rbind(traj3taps, rc)
+    print(ggplot(data=rc) + geom_point(mapping=aes(x=x,y=y), color="gray") )
+    readline()
   }
 }
 velo <- append(0, sqrt((diff(traj3taps$x))^2 + (diff(traj3taps$y))^2) * traj3taps$frameRate[2:nrow(traj3taps)])
