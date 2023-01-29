@@ -1,6 +1,9 @@
 library(tidyverse)
+library(rstatix) 
+library(ggpubr)
 scale = 0.5625
 # Compute distance to target and statistics for 2 and 3 taps
+setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_1/")
 ghost <- read.csv("../Data/usa_2013.csv")
 files <- list.files(".", pattern="path_follow_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)
 distances <- setNames(data.frame(matrix(ncol = 3, nrow = 0)), c("taps", "mean", "sd"))
@@ -18,7 +21,64 @@ for (cf in files) {
     distances <- add_row(distances, taps = 3, mean = mean(distTraj,na.rm=T), sd = sd(distTraj,na.rm=T))
   }
 }
+
 aggregate(distances, by = list(distances$taps), FUN = mean)
+
+# --------- testing of mean differences
+# --------- non parametric testing 
+distances2taps <- distances$mean[distances$taps == 2]
+distances3taps <- distances$mean[distances$taps == 3]
+# datagroups
+taps <- factor(rep(c("2taps", "3taps"), c(length(distances2taps),length(distances3taps))))
+id <- factor(c(1:length(distances2taps), 1:length(distances3taps)))
+# data frame
+meanData <- tibble(id, taps, c(distances2taps,distances3taps))
+names(meanData) <- c("id", "taps", "meanDistance")
+# summary statistics
+meanData %>%
+  group_by(taps) %>%
+  get_summary_stats(meanDistance, type = "median_iqr")
+# visualization
+bxp <- ggpaired(meanData, x = "taps", y = "meanDistance", order = c("2taps", "3taps"),
+                ylab = "meanDistance", xlab = "taps")
+bxp
+# assumption
+# The test assumes that differences between paired samples should be distributed 
+# symmetrically around the median.
+differences = data.frame(differences = distances2taps - distances3taps)
+gghistogram(differences, x = "differences", y = "..density..",
+            fill = "steelblue",bins = 6, add_density = TRUE)
+# computation of test
+stat.test <- meanData %>%
+  wilcox_test(meanDistance ~ taps, paired = TRUE) %>% add_significance()
+stat.test
+# effect size
+meanData %>%
+  wilcox_effsize(meanDistance ~ taps, paired = TRUE)
+# report
+stat.test <- stat.test %>% add_xy_position(x = "taps") 
+bxp + stat_pvalue_manual(stat.test, tip.length = 0) + labs(subtitle = get_test_label(stat.test, detailed= TRUE))
+# ------- parametric testing 
+# procedure as in https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/
+# device comparison within subjects: one factor, two levels
+# check assumptions
+# any outliers?
+meanData %>% group_by(taps) %>% identify_outliers(meanDistance)
+# normality via Shapiro-Wilk test (normal if p>0.05)
+meanData %>% group_by(taps) %>% shapiro_test(meanDistance)
+# normality via qqplot
+ggqqplot(meanData, "meanDistance", facet.by="taps")
+# assumption of sphericity will be automatically checked during 
+# the computation of the ANOVA test using the R function anova_test() 
+# [rstatix package]. The Mauchly’s test is internally used to assess 
+# the sphericity assumption.
+res.ttest <- meanData %>%
+  t_test(meanDistance ~ taps, paired = TRUE) %>% add_significance()
+stat.test
+res.aov <- anova_test(data = meanData, dv = meanDistance, wid = id, within = taps )
+get_anova_table(res.aov)
+# ges is the generalized effect size (amount of variability due to the within-subjects factor)
+print("The mean distance was not statistically significantly different between 2 and 3 taps, F(1, 8) = 2.821, n.s., eta2[g] = 0.119.")
 
 
 # Compute histograms of magnitude velocity and direction during exploration
