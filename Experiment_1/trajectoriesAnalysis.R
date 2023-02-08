@@ -1,6 +1,7 @@
 library(tidyverse)
 library(rstatix) 
 library(ggpubr)
+library(patchwork)
 scale = 0.5625
 # Compute distance to target and statistics for 2 and 3 taps
 setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_1/")
@@ -155,11 +156,14 @@ for (cf in files) {
 velo <- append(0, sqrt((diff(traj2taps$x))^2 + (diff(traj2taps$y))^2) * traj2taps$frameRate[2:nrow(traj2taps)])
 dire <- append(0, atan2(diff(traj2taps$y),diff(traj2taps$x)))
 traj2taps_v <- traj2taps %>% mutate(velo) %>% mutate(dire)
-ggplot(data=traj2taps_v, aes(velo)) + geom_histogram(binwidth = 2) + # speed in pixels/sec
-  coord_cartesian(xlim = c(0.0,200))
-ggplot(data=traj2taps_v, aes(dire)) + geom_histogram(binwidth = pi/90) + # binwidth = 2 degrees
-  coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") +
+hist1 <- ggplot(data=traj2taps_v, aes(velo)) + geom_histogram(binwidth = 2) + # speed in pixels/sec
+  coord_cartesian(xlim = c(0.0,200)) + xlab("velocity") + ylab("") +
+  theme(aspect.ratio=1/1)
+hist1
+polar1 <- ggplot(data=traj2taps_v, aes(dire)) + geom_histogram(binwidth = pi/90) + # binwidth = 2 degrees
+  coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") + ylab("") +
   theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
+polar1
 
 traj3taps <- data.frame()
 for (cf in files) {
@@ -174,10 +178,12 @@ for (cf in files) {
 velo <- append(0, sqrt((diff(traj3taps$x))^2 + (diff(traj3taps$y))^2) * traj3taps$frameRate[2:nrow(traj3taps)])
 dire <- append(0, atan2(diff(traj3taps$y),diff(traj3taps$x)))
 traj3taps_v <- traj3taps %>% mutate(velo) %>% mutate(dire)
-ggplot(data=traj3taps_v, aes(velo)) + geom_histogram(binwidth = 2) +
-  coord_cartesian(xlim = c(0.0,200))
-ggplot(data=traj3taps_v, aes(dire)) + geom_histogram(binwidth = pi/90) + # binwidth = 2 degrees
-  coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") +
+hist2 <- ggplot(data=traj3taps_v, aes(velo)) + geom_histogram(binwidth = 2) +
+  coord_cartesian(xlim = c(0.0,200)) + xlab("velocity") + ylab("") +
+  theme(aspect.ratio=1/1)
+hist2
+polar2 <- ggplot(data=traj3taps_v, aes(dire)) + geom_histogram(binwidth = pi/90) + # binwidth = 2 degrees
+  coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") + ylab("") +
   theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
-  
-
+polar2
+hist1 + polar1 + hist2 + polar2

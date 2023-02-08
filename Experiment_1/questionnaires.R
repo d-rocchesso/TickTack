@@ -169,7 +169,7 @@ bxp + stat_pvalue_manual(stat.test, tip.length = 0) + labs(subtitle = get_test_l
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
-questionN <- 5 # set the question number here (1 to 6)
+questionN <- 6 # set the question number here (1 to 6)
 nasa1 <- nasatlx$answer[nasatlx$order == 1 & nasatlx$question == questionN]
 nasa2 <- nasatlx$answer[nasatlx$order == 2 & nasatlx$question == questionN]
 # datagroups
