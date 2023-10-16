@@ -62,6 +62,7 @@ void setup() {
   // s.outputDevice(11); 
   MidiBus.list(); // List all available Midi devices on STDOUT. This will show each device's index and name.
   myBus = new MidiBus(this, "Xjam", "Real Time Sequencer");
+  // myBus = new MidiBus(this, "K-Board", "Real Time Sequencer");
   scale = float(width)/WIDTH; 
   print("scale = " + scale + "\n");
   noStroke();
@@ -105,12 +106,14 @@ void drawGame(){
   switch (sequenceLength) {
     case 2:
       sequenceLength = 2;
-      duplets();
+      // duplets();  // uncomment for showing cursor all time
+      dupletsHide(); // uncomment for hiding the cursor intermittently (and comment above)
       // visualBeatsDuplets(); // uncomment for visual feedback on rhythm
       break;
     case 3:
       sequenceLength = 3;
-      triplets();
+      // triplets();  // uncomment for showing cursor all time
+      tripletsHide(); // uncomment for hiding the cursor intermittently (and comment above)
       // visualBeatsTriplets(); // uncomment for visual feedback on rhythm
       break;
   }
@@ -253,12 +256,12 @@ void keyReleased() {
 
 void noteOn(int channel, int pitch, int velocity) {
   // Receive a noteOn
-  /* println();
+  println();
   println("Note On:");
   println("--------");
   println("Channel:"+channel);
   println("Pitch:"+pitch);
-  println("Velocity:"+velocity); */
+  println("Velocity:"+velocity); /* */
   inst = millis();
   if ((inst - inst_1) > 2000) {
      t = 0;  // restart from first pulse after 2 seconds of inactivity

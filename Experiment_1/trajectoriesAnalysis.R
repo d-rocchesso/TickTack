@@ -81,7 +81,7 @@ res.ttest
 res.aov <- anova_test(data = meanData, dv = meanDistance, wid = id, within = taps )
 get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
-print("The mean distance was not statistically significantly different between 2 and 3 taps, F(1, 8) = 2.821, n.s., eta2[g] = 0.119.")
+print("The mean distance was not statistically significantly different between 2 and 3 taps, F(1, 9) = 4.469, n.s., eta2[g] = 0.169.")
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
@@ -137,7 +137,7 @@ res.ttest
 res.aov <- anova_test(data = meanData, dv = meanDistance, wid = id, within = half )
 get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
-print("The mean distance was statistically significantly different between first and second half, F(1, 8) = 6.927, p = 0.03, eta2[g] = 0.212.")
+print("The mean distance was statistically significantly different between first and second half, F(1, 9) = 9.639, p = 0.013, eta2[g] = 0.264.")
 
 
 # Compute histograms of magnitude velocity and direction during exploration
