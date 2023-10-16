@@ -10,6 +10,7 @@ int screenState = MENUSCREEN;
 int sequenceLength = 2;
 boolean recording = false;
 boolean following = false;
+boolean inverting = false;
 
 final float SPEEDMUL = 100; // visual speed multiplier
 final int PAUSE = 100; // pause between triplets
@@ -97,7 +98,7 @@ void drawMenu(){
   text("The quicker the sequence, the faster the movement", 40, 200);
   text("Check the labels of the semi-axes", 40, 250);  
   text("To start recording, press 'r'", 40, 300);
-  text("To follow the ghost, press 'f'", 40, 350);
+  text("To follow the ghost, press 'f' or 'i' ", 40, 350);
   text("To get back here, press 'ESC'", 40, 400);
 }
 
@@ -132,7 +133,9 @@ void drawGame(){
           // y = int(row.getFloat("y")*scale);  
           /* interpolate ghost positions */
           x = int(((rown.getFloat("x") - row.getFloat("x"))/decimation * delta + row.getFloat("x"))*scale);
+          if (inverting) x = width - x;
           y = int(((rown.getFloat("y") - row.getFloat("y"))/decimation * delta + row.getFloat("y"))*scale); 
+          if (inverting) y = height - y;
           ellipse(x, y, 10, 10);
           frameNum++;
           newRow.setFloat("xGhost", x);
@@ -193,7 +196,8 @@ void keyPressed() {
       table.addColumn("H = " + str(height));
       table.addColumn("taps = " + str(sequenceLength));
     }
-    if (key == 'f') {
+    if ((key == 'f') || (key == 'i')) {
+      if (key == 'i') inverting = true;
       recording = true;
       following = true;
       table = new Table();
@@ -213,6 +217,7 @@ void keyPressed() {
       for (int i=0; i<NUM; i++) {
           mx[i] = int(row.getFloat("x")*scale);
           my[i] = int(row.getFloat("y")*scale);  
+          if (inverting) {mx[i] = width - mx[i]; my[i] = height - my[i];}
       } 
     }
     // if (key == 'q') exit();
