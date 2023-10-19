@@ -11,6 +11,7 @@ int sequenceLength = 2;
 boolean recording = false;
 boolean following = false;
 boolean inverting = false;
+boolean hiding = false;
 
 final float SPEEDMUL = 100; // visual speed multiplier
 final int PAUSE = 100; // pause between triplets
@@ -97,9 +98,11 @@ void drawMenu(){
   text("Choose controlling by duplets ('2') or by triplets ('3')", 40, 150);
   text("The quicker the sequence, the faster the movement", 40, 200);
   text("Check the labels of the semi-axes", 40, 250);  
-  text("To start recording, press 'r'", 40, 300);
-  text("To follow the ghost, press 'f' or 'i' ", 40, 350);
-  text("To get back here, press 'ESC'", 40, 400);
+  text("To toggle intermittent visual hiding, press 'h'", 40, 350);
+  text("To start recording, press 'r'", 40, 400);
+  text("To follow the ghost, press 'f'", 40, 450);
+  text("To get back here, press 'ESC'", 40, 500);
+  text("Status: hiding = " + hiding, 40, 800);
 }
 
 void drawGame(){
@@ -107,14 +110,14 @@ void drawGame(){
   switch (sequenceLength) {
     case 2:
       sequenceLength = 2;
-      // duplets();  // uncomment for showing cursor all time
-      dupletsHide(); // uncomment for hiding the cursor intermittently (and comment above)
+      if (hiding) dupletsHide(); // for hiding the cursor intermittently
+      else duplets();  // for showing cursor all time
       // visualBeatsDuplets(); // uncomment for visual feedback on rhythm
       break;
     case 3:
       sequenceLength = 3;
-      // triplets();  // uncomment for showing cursor all time
-      tripletsHide(); // uncomment for hiding the cursor intermittently (and comment above)
+      if (hiding) tripletsHide(); // for hiding the cursor intermittently
+      else triplets();  // for showing cursor all time
       // visualBeatsTriplets(); // uncomment for visual feedback on rhythm
       break;
   }
@@ -166,12 +169,15 @@ void draw() {
 }
 
 void keyPressed() {
+  if (key == 'h') {hiding = !hiding; return;}
   if (key == ESC) {
     key = 0;
     screenState = MENUSCREEN;
     if (recording) {
-      if (following) saveTable(table, "data/path_follow_" + day() + hour() + minute() + ".csv");
-      else  saveTable(table, "data/path_" + day() + hour() + minute() + ".csv");
+      if (following) 
+        saveTable(table, "data/path_follow_" + day() + hour() + minute() + ".csv");
+      else  
+        saveTable(table, "data/path_" + day() + hour() + minute() + ".csv");
       recording = false;
       following = false;
       frameNum = 0;
@@ -195,9 +201,11 @@ void keyPressed() {
       table.addColumn("W = " + str(width));
       table.addColumn("H = " + str(height));
       table.addColumn("taps = " + str(sequenceLength));
+      table.addColumn("hiding = " + hiding);
     }
-    if ((key == 'f') || (key == 'i')) {
-      if (key == 'i') inverting = true;
+    if (key == 'f')  {
+      if (hiding) inverting = true; 
+      else inverting = false;
       recording = true;
       following = true;
       table = new Table();
@@ -213,6 +221,7 @@ void keyPressed() {
       table.addColumn("W = " + str(width));
       table.addColumn("H = " + str(height));
       table.addColumn("taps = " + str(sequenceLength));
+      table.addColumn("hiding = " + hiding);
       TableRow row = ghostTable.getRow(2); // initialize follower to ghost position
       for (int i=0; i<NUM; i++) {
           mx[i] = int(row.getFloat("x")*scale);
