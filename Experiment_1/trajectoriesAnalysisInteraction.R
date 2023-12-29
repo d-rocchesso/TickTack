@@ -2,6 +2,8 @@ library(tidyverse)
 library(rstatix) 
 library(ggpubr)
 library(patchwork)
+library(R.utils)
+library(lubridate)
 scale = 0.5625
 # Compute distance to target and statistics for 2 and 3 taps
 setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_1/")
@@ -12,7 +14,10 @@ half <- 0
 for (cf in files) {
   print(cf)
   traj <- read.csv(cf)
-  print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y), color="gray") + geom_point(mapping=aes(x=xGhost,y=yGhost), color="red", shape="."))
+  # print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y), color="gray") + geom_point(mapping=aes(x=xGhost,y=yGhost), color="red", shape="."))
+  print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y),color="red",shape=20,alpha=0.03) + 
+          geom_point(mapping=aes(x=xGhost,y=yGhost), color="blue", shape=20, size=0.6, alpha=0.03) +
+          theme(legend.position="none"))
   # readline()
   distTraj <- sqrt((traj$x - traj$xGhost)^2 + (traj$y - traj$yGhost)^2)
   summary(distTraj)
@@ -85,77 +90,6 @@ get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 print("The mean distance was not statistically significantly different between 2 and 3 taps, F(1, 9) = 4.469, n.s., eta2[g] = 0.169.")
 
-# ******* mixed anova ******
-# Hiding (true or false) is within subjects
-# order (hiding first or hiding second) is between subjects
-# https://www.datanovia.com/en/lessons/mixed-anova-in-r/
-subject <- factor(rep(1:10, each=2))
-first <- factor(distances$taps[rep(seq(1,nrow(distances),2),each=2)])
-distancesInt <- distances %>% mutate(subject) %>% mutate(first)
-distancesInt$hh <- interaction(distancesInt$taps,distancesInt$first)
-distancesInt <- as_tibble(distancesInt)
-interaction.plot(distancesInt$first,distancesInt$taps,distancesInt$mean)
-# Summary statistics 
-distancesInt %>%
-  group_by(taps, first) %>%
-  get_summary_stats(mean, type="mean_sd")
-# visualization
-bxp <- ggboxplot(
-  distancesInt, x="taps", y="mean", color="first", palette="jco", ylab="mean distance"
-)
-bxp
-# outliers
-distancesInt %>%
-  group_by(taps, first) %>%
-  identify_outliers(mean)
-# normality assumption
-distancesInt %>%
-  group_by(taps, first) %>%
-  shapiro_test(mean)
-ggqqplot(distancesInt, "mean", ggtheme = theme_bw()) +
-  facet_grid(taps ~ first)
-# homogeneity of variance
-distancesInt %>%
-  group_by(taps) %>%
-  levene_test(mean ~ first)
-# homogeneity of covariance (not violated if p>0.001)
-box_m(distancesInt[, "mean", drop = FALSE], distancesInt$first)
-# two-way mixed ANOVA test
-res.aov <- anova_test(
-  data = distancesInt, dv = mean, wid = subject,
-  between = first, within = taps
-)
-get_anova_table(res.aov)
-# procedure for a significant two-way interaction
-# simple main effect of first (kind of first exposure) variable
-one.way <- distancesInt %>%
-  group_by(taps) %>%
-  anova_test(dv=mean, wid=subject, between=first) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method="bonferroni")
-one.way # simple main effect of first (exposure) was significant for the 3-taps condition
-# simple main effect of taps variable
-one.way2 <- distancesInt %>%
-  group_by(first) %>%
-  anova_test(dv=mean, wid=subject, within=taps) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method="bonferroni")
-one.way2 # simple main effect of number of taps was significant for the group who was first exposed to 3 taps
-# Report:
-# There was a statistically significant interaction between group of first exposure and number of taps
-# in explaining the mean distance from target, F(1, 8) = 27.39, p<0.001.
-# Considering the Bonferroni adjusted p-value, the simple main effect of group of first exposure
-# was significant for the 3-taps condition (p<0.0001) but not for 2 taps. 
-# Considering the Bonferroni adjusted p-value, the simple main effect of number of taps 
-# was significant for first exposure to 3 taps (p=0.012) but not for first exposure to 2 taps. 
-# Visualization: boxplots with p-values
-pwc <- one.way %>% add_xy_position(x="taps") # gives error
-bxp + stat_pvalue_manual(pwc, tip.length=0, hide.ns=TRUE)
-# asymmetric skill transfer # sbagliato
-pwc2 <- one.way2 %>% add_xy_position(x="half")
-bxp2 <- ggboxplot(distancesInt, x="half", "y=mean", color="first", add="mean_se", ylab="mean distance") 
-bxp2 + stat_pvalue_manual(pwc2, tip.length=0, hide.ns=TRUE)
-
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
@@ -213,6 +147,83 @@ get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 print("The mean distance was statistically significantly different between first and second half, F(1, 9) = 9.639, p = 0.013, eta2[g] = 0.264.")
 
+# ******* mixed anova ******
+# Hiding (true or false) is within subjects
+# order (hiding first or hiding second) is between subjects
+# https://www.datanovia.com/en/lessons/mixed-anova-in-r/
+subject <- factor(rep(1:10, each=2))
+first <- factor(distances$taps[rep(seq(1,nrow(distances),2),each=2)])
+distances$half <- factor(distances$half)
+distances$taps <- factor(distances$taps)
+distancesInt <- distances %>% mutate(subject) %>% mutate(first)
+distancesInt$hh <- interaction(distancesInt$taps,distancesInt$first)
+distancesInt <- as_tibble(distancesInt)
+interaction.plot(distancesInt$first,distancesInt$taps,distancesInt$mean)
+# Summary statistics 
+distancesInt %>%
+  group_by(taps, first) %>%
+  get_summary_stats(mean, type="mean_sd")
+# visualization
+bxp <- ggboxplot(
+ # distancesInt, x="taps", y="mean", color="first", palette="jco", ylab="mean distance"
+ distancesInt, x="half", y="mean", color="taps", palette="jco", ylab="mean distance"
+)
+bxp
+# outliers
+distancesInt %>%
+  group_by(taps, first) %>%
+  identify_outliers(mean)
+# normality assumption
+distancesInt %>%
+  group_by(taps, first) %>%
+  shapiro_test(mean)
+ggqqplot(distancesInt, "mean", ggtheme = theme_bw()) +
+  facet_grid(taps ~ first)
+# homogeneity of variance
+distancesInt %>%
+  group_by(taps) %>%
+  levene_test(mean ~ first)
+# homogeneity of covariance (not violated if p>0.001)
+box_m(distancesInt[, "mean", drop = FALSE], distancesInt$first)
+# two-way mixed ANOVA test
+res.aov <- anova_test(
+  data = distancesInt, dv = mean, wid = subject,
+  between = first, within = taps
+)
+get_anova_table(res.aov)
+# procedure for a significant two-way interaction
+# simple main effect of first (kind of first exposure) variable
+one.way <- distancesInt %>%
+  group_by(taps) %>%
+  anova_test(dv=mean, wid=subject, between=first) %>%
+  get_anova_table() # %>%
+  # adjust_pvalue(method="bonferroni")
+one.way # simple main effect of first (exposure) was significant for the 3-taps condition
+# simple main effect of taps variable
+one.way2 <- distancesInt %>%
+  group_by(first) %>%
+  anova_test(dv=mean, wid=subject, within=taps) %>%
+  get_anova_table() # %>%
+  # adjust_pvalue(method="bonferroni")
+one.way2 # simple main effect of number of taps was significant for the group who was first exposed to 3 taps
+# Report:
+# There was a statistically significant interaction between group of first exposure and number of taps
+# in explaining the mean distance from target, F(1, 8) = 27.39, p<0.001.
+# The simple main effect of group of first exposure
+# was significant for the 3-taps condition (p<0.0001) but not for 2 taps. 
+# The simple main effect of number of taps 
+# was significant for first exposure to 3 taps (p<0.01) but not for first exposure to 2 taps. 
+# Visualization: boxplots with p-values
+# pwc <- one.way %>% add_xy_position(x="taps") # gives error
+# bxp + stat_pvalue_manual(pwc, tip.length=0, hide.ns=TRUE)
+bxp
+# asymmetric skill transfer # sbagliato
+# pwc2 <- one.way2 %>% add_xy_position(x="half") # gives error
+bxp2 <- ggboxplot(distancesInt, x="half", "y=mean", color="first", add="mean_se", ylab="mean distance") +
+  labs(color="first exposure") 
+# bxp2 <- ggboxplot(distancesInt, x="half", "y=mean", color="taps", add="mean_se", ylab="mean distance") 
+# bxp2 + stat_pvalue_manual(pwc2, tip.length=0, hide.ns=TRUE)
+bxp2
 
 # Compute histograms of magnitude velocity and direction during exploration
 files <- list.files(".", pattern="path_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)
@@ -230,11 +241,12 @@ for (cf in files) {
 velo <- append(0, sqrt((diff(traj2taps$x))^2 + (diff(traj2taps$y))^2) * traj2taps$frameRate[2:nrow(traj2taps)])
 dire <- append(0, atan2(diff(traj2taps$y),diff(traj2taps$x)))
 traj2taps_v <- traj2taps %>% mutate(velo) %>% mutate(dire)
-hist1 <- ggplot(data=traj2taps_v, aes(velo)) + geom_histogram(binwidth = 2) + # speed in pixels/sec
+t2t_v <- traj2taps_v %>% filter(abs(velo)>.001) %>% filter(abs(dire)>.001 & abs(dire)<3.141) %>% filter(abs(dire)<1.57 | abs(dire)>1.58) 
+hist1 <- ggplot(data=t2t_v, aes(velo)) + geom_histogram(binwidth = 2) + # speed in pixels/sec
   coord_cartesian(xlim = c(0.0,200)) + xlab("velocity") + ylab("") +
   theme(aspect.ratio=1/1)
 hist1
-polar1 <- ggplot(data=traj2taps_v, aes(dire)) + geom_histogram(binwidth = pi/90) + # binwidth = 2 degrees
+polar1 <- ggplot(data=t2t_v, aes(dire)) + geom_histogram(binwidth = 3*pi/90) + # binwidth = 2 degrees
   coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") + ylab("") +
   theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
 polar1
@@ -252,11 +264,12 @@ for (cf in files) {
 velo <- append(0, sqrt((diff(traj3taps$x))^2 + (diff(traj3taps$y))^2) * traj3taps$frameRate[2:nrow(traj3taps)])
 dire <- append(0, atan2(diff(traj3taps$y),diff(traj3taps$x)))
 traj3taps_v <- traj3taps %>% mutate(velo) %>% mutate(dire)
-hist2 <- ggplot(data=traj3taps_v, aes(velo)) + geom_histogram(binwidth = 2) +
+t3t_v <- traj3taps_v %>% filter(abs(velo)>.001) %>% filter(abs(dire)>.001 & abs(dire)<3.141) %>% filter(abs(dire)<1.57 | abs(dire)>1.58) 
+hist2 <- ggplot(data=t3t_v, aes(velo)) + geom_histogram(binwidth = 2) +
   coord_cartesian(xlim = c(0.0,200)) + xlab("velocity") + ylab("") +
   theme(aspect.ratio=1/1)
 hist2
-polar2 <- ggplot(data=traj3taps_v, aes(dire)) + geom_histogram(binwidth = pi/90) + # binwidth = 2 degrees
+polar2 <- ggplot(data=t3t_v, aes(dire)) + geom_histogram(binwidth = 3*pi/90) + # binwidth = 2 degrees
   coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") + ylab("") +
   theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
 polar2

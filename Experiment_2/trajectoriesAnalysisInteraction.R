@@ -2,20 +2,50 @@ library(tidyverse)
 library(rstatix) 
 library(ggpubr)
 library(patchwork)
+library(R.utils)
+library(lubridate)
 scale = 0.5625
 # Compute distance to target and statistics for hide and noHide 
 setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_2/")
 ghost <- read.csv("../Data/usa_2013.csv")
 files <- list.files(".", pattern="path_follow_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)
+exclude <- c(c(5)*2 - 1, c(5)*2) ;
+files <- files[-exclude]
 distances <- setNames(data.frame(matrix(ncol = 4, nrow = 0)), c("hiding", "half", "mean", "sd"))
 half <- 0
 for (cf in files) {
   print(cf)
+  # secs <- 
+  # millisecs <- system(paste("gdate +%s%N -r ", cf), intern=TRUE) 
+  # ms <- as.numeric(sub("^.*(...)$", "\\1", sub('.{6}$','',millisecs))) # ms of modif. time
   traj <- read.csv(cf)
-  print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y), color="gray") + geom_point(mapping=aes(x=xGhost,y=yGhost), color="red", shape="."))
-  # readline()
+  fine <- lastModified(cf)
+  durata <- (traj$time[nrow(traj)] - traj$time[1]) # in ms
+  inizio <- fine - seconds(durata/1000)
+  timestamp <- seq(inizio,fine,length.out=nrow(traj))
+  traj <- traj %>% mutate(timestamp) # add column of timestamp
+  hide <- (second(timestamp)<5) | (second(timestamp)>=10) & (second(timestamp)<15) |
+    (second(timestamp)>=20) & (second(timestamp)<25) |
+    (second(timestamp)>=30) & (second(timestamp)<35) |
+    (second(timestamp)>=40) & (second(timestamp)<45) |
+    (second(timestamp)>=50) & (second(timestamp)<55) 
+  traj <- traj %>% mutate(hide) # add column of hiding segments
+  
+  if ("hiding...true" %in% colnames(traj))
+    print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y,color=hide),shape=20,alpha=0.03) + 
+            scale_color_manual(values = c("red", "#FFCC00")) +
+            geom_point(mapping=aes(x=xGhost,y=yGhost), color="blue", shape=20, size=0.6, alpha=0.03) +
+            # guides(color = guide_legend(override.aes = list(size = 5, alpha=1)) +
+            theme(legend.position="none"))
+  else
+    print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y,color="red"),shape=20,alpha=0.03) + 
+            geom_point(mapping=aes(x=xGhost,y=yGhost), color="blue", shape=20, size=0.6, alpha=0.03) +
+            theme(legend.position="none"))
+  readline()
   distTraj <- sqrt((traj$x - traj$xGhost)^2 + (traj$y - traj$yGhost)^2)
   summary(distTraj)
+  
+  
   if ("hiding...false" %in% colnames(traj)) {
     print("No hiding")
     distances <- add_row(distances, hiding = FALSE, half = half+1, mean = mean(distTraj,na.rm=T), sd = sd(distTraj,na.rm=T))
@@ -86,76 +116,6 @@ get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 # print("The mean distance was not statistically significantly different between Hiding and Nohiding, F(1, 2) = 1.092, n.s., eta2[g] = 0.161.")
 
-# ******* mixed anova ******
-# Hiding (true or false) is within subjects
-# order (hiding first or hiding second) is between subjects
-# https://www.datanovia.com/en/lessons/mixed-anova-in-r/
-subject <- rep(1:14, each=2)
-hideFirst <- distances$hiding[rep(seq(1,nrow(distances),2),each=2)]
-distancesInt <- distances %>% mutate(subject) %>% mutate(hideFirst)
-distancesInt$hh <- interaction(distancesInt$hiding,distancesInt$hideFirst)
-interaction.plot(distancesInt$hideFirst,distancesInt$hiding,distancesInt$mean)
-# Summary statistics 
-distancesInt %>%
-  group_by(hiding, hideFirst) %>%
-  get_summary_stats(mean, type="mean_sd")
-# visualization
-bxp <- ggboxplot(
-  distancesInt, x="hiding", y="mean", color="hideFirst", palette="jco", ylab="mean distance"
-)
-bxp
-# outliers
-distancesInt %>%
-  group_by(hiding, hideFirst) %>%
-  identify_outliers(mean)
-# normality assumption
-distancesInt %>%
-  group_by(hiding, hideFirst) %>%
-  shapiro_test(mean)
-ggqqplot(distancesInt, "mean", ggtheme = theme_bw()) +
-  facet_grid(hiding ~ hideFirst)
-# homogeneity of variance
-distancesInt %>%
-  group_by(hiding) %>%
-  levene_test(mean ~ hideFirst)
-# homogeneity of covariance (not violated if p>0.001)
-box_m(distancesInt[, "mean", drop = FALSE], distancesInt$hideFirst)
-# two-way mixed ANOVA test
-res.aov <- anova_test(
-  data = distancesInt, dv = mean, wid = subject,
-  between = hideFirst, within = hiding
-)
-get_anova_table(res.aov)
-# procedure for a significant two-way interaction
-# simple main effect of hideFirst (kind of first exposure) variable
-one.way <- distancesInt %>%
-  group_by(hiding) %>%
-  anova_test(dv=mean, wid=subject, between=hideFirst) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method="bonferroni")
-one.way # simple main effect of hideFirst (exposure) was almost significant for hiding
-# simple main effect of hiding variable
-one.way2 <- distancesInt %>%
-  group_by(hideFirst) %>%
-  anova_test(dv=mean, wid=subject, within=hiding) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method="bonferroni")
-one.way2 # simple main effect of number of taps was significant for the group who was first exposed to 3 taps
-# Report:
-# There was a statistically significant yet small interaction between group of first exposure and hiding condition
-# in explaining the mean distance from target, F(1, 12) = 5.186, p<0.05, ges=0.071.
-# Considering the Bonferroni adjusted p-value, the simple main effect of group of first exposure
-# was marginally significant for the hiding condition (p<0.08) but not for no hiding. 
-# Considering the Bonferroni adjusted p-value, the simple main effect of hiding 
-# was not significant for neither kind of first exposure.
-# Visualization: boxplots with p-values
-
-
-# asymmetric skill transfer
-ggboxplot(distancesInt, x="half", "y=mean", color="hiding", add="mean_se", ylab="mean distance") 
-int.aov <- anova_test(distancesInt, dv=mean, wid=subject, between=hideFirst, within=hiding)
-get_anova_table(int.aov)
-summary(int.aov)
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
@@ -214,6 +174,81 @@ get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 # print("The mean distance was not statistically significantly different between first and second half, F(1, 2) = 0.621, p = 0.013, eta2[g] = 0.264.")
 
+# ******* mixed anova ******
+# Hiding (true or false) is within subjects
+# order (hiding first or hiding second) is between subjects
+# https://www.datanovia.com/en/lessons/mixed-anova-in-r/
+subject <- rep(1:(nrow(distances)/2), each=2)
+hideFirst <- distances$hiding[rep(seq(1,nrow(distances),2),each=2)]
+distancesInt <- distances %>% mutate(subject) %>% mutate(hideFirst)
+distancesInt$hh <- interaction(distancesInt$hiding,distancesInt$hideFirst)
+interaction.plot(distancesInt$hideFirst,distancesInt$hiding,distancesInt$mean)
+# Summary statistics 
+distancesInt %>%
+  group_by(hiding, hideFirst) %>%
+  get_summary_stats(mean, type="mean_sd")
+# visualization
+bxp <- ggboxplot(
+  # distancesInt, x="hiding", y="mean", color="hideFirst", palette="jco", ylab="mean distance"#, add="jitter"
+  distancesInt, x="half", y="mean", color="hiding", palette="jco", ylab="mean distance"
+)
+bxp
+# outliers
+distancesInt %>%
+  group_by(hiding, hideFirst) %>%
+  identify_outliers(mean)
+# normality assumption
+distancesInt %>%
+  group_by(hiding, hideFirst) %>%
+  shapiro_test(mean)
+ggqqplot(distancesInt, "mean", ggtheme = theme_bw()) +
+  facet_grid(hiding ~ hideFirst)
+# homogeneity of variance
+distancesInt %>%
+  group_by(hiding) %>%
+  levene_test(mean ~ hideFirst)
+# homogeneity of covariance (not violated if p>0.001)
+box_m(distancesInt[, "mean", drop = FALSE], distancesInt$hideFirst)
+# two-way mixed ANOVA test
+res.aov <- anova_test(
+  data = distancesInt, dv = mean, wid = subject,
+  between = hideFirst, within = hiding
+)
+get_anova_table(res.aov)
+# procedure for a significant two-way interaction
+# simple main effect of hideFirst (kind of first exposure) variable
+one.way <- distancesInt %>%
+  group_by(hiding) %>%
+  anova_test(dv=mean, wid=subject, between=hideFirst) %>%
+  get_anova_table() # %>%
+  #  adjust_pvalue(method="bonferroni")
+one.way # simple main effect of hideFirst (exposure) was almost significant for hiding
+# simple main effect of hiding variable
+one.way2 <- distancesInt %>%
+  group_by(hideFirst) %>%
+  anova_test(dv=mean, wid=subject, within=hiding) %>%
+  get_anova_table() # %>%
+  # adjust_pvalue(method="bonferroni")
+one.way2 # simple main effect of number of taps was significant for the group who was first exposed to 3 taps
+# Report:
+# There was a statistically significant yet small interaction between group of first exposure and hiding condition
+# in explaining the mean distance from target, F(1, 14) = 5.454, p<0.05, ges=0.060.
+# The simple main effect of group of first exposure
+# was significant for the hiding condition (p<0.05) but not for no hiding. 
+# The simple main effect of hiding 
+# was not significant for neither kind of first exposure.
+# Visualization: boxplots with p-values
+pwc <- one.way %>% add_xy_position(x="hide") # gives error
+bxp + stat_pvalue_manual(pwc, tip.length=0, hide.ns=TRUE)
+
+# asymmetric skill transfer
+# ggboxplot(distancesInt, x="half", "y=mean", color="hiding", add="mean_se", ylab="mean distance") 
+ggboxplot(distancesInt, x="half", "y=mean", color="hideFirst", add="mean_se", ylab="mean distance") +
+  labs(color="hiding at first exposure")
+int.aov <- anova_test(distancesInt, dv=mean, wid=subject, between=hideFirst, within=hiding)
+get_anova_table(int.aov)
+summary(int.aov)
+
 
 # Compute histograms of magnitude velocity and direction during exploration
 files <- list.files(".", pattern="path_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)
@@ -240,4 +275,4 @@ polar1 <- ggplot(data=tNh_v, aes(dire)) + geom_histogram(binwidth = 3*pi/90) + #
   coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") + ylab("") +
   theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
 polar1
-
+hist1 + polar1 

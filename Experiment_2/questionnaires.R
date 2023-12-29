@@ -3,8 +3,8 @@ library(rstatix)
 library(ggpubr)
 setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_2/")
 
-age = c(22, 23, 39, 38, 34, 35, 28, 25, 29, 30, 23, 23, 22, 29, 29)
-exclude = c(5) #remove participant 5
+age = c(22, 23, 39, 38, 34, 35, 28, 25, 29, 30, 23, 23, 22, 29, 29, 31, 28)
+exclude = c(5) #remove participants 5, ...
 median(age[-exclude]) 
 IQR(age[-exclude])
 
@@ -240,7 +240,7 @@ bxp + stat_pvalue_manual(stat.test, tip.length = 0) + labs(subtitle = get_test_l
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
-questionN <- 6 # set the question number here (1 to 6)
+questionN <- 6# set the question number here (1 to 6)
 nasa1 <- nasatlx$answer[nasatlx$part!=exclude & nasatlx$order == 1 & nasatlx$question == questionN]
 nasa2 <- nasatlx$answer[nasatlx$part!=exclude & nasatlx$order == 2 & nasatlx$question == questionN]
 # datagroups

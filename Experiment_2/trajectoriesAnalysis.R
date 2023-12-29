@@ -3,7 +3,7 @@ library(rstatix)
 library(ggpubr)
 library(patchwork)
 scale = 0.5625
-# Compute distance to target and statistics for 2 and 3 taps
+# Compute distance to target and statistics for hide and noHide 
 setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_2/")
 ghost <- read.csv("../Data/usa_2013.csv")
 files <- list.files(".", pattern="path_follow_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)
@@ -12,7 +12,7 @@ for (cf in files) {
   print(cf)
   traj <- read.csv(cf)
   print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y), color="gray") + geom_point(mapping=aes(x=xGhost,y=yGhost), color="red", shape="."))
-  readline()
+  # readline()
   distTraj <- sqrt((traj$x - traj$xGhost)^2 + (traj$y - traj$yGhost)^2)
   summary(distTraj)
   if ("hiding...false" %in% colnames(traj)) {
@@ -40,7 +40,8 @@ names(meanData) <- c("id", "hiding", "meanDistance")
 # summary statistics
 meanData %>%
   group_by(hiding) %>%
-  get_summary_stats(meanDistance, type = "median_iqr")
+  # get_summary_stats(meanDistance, type = "median_iqr") # %>%
+  get_summary_stats(meanDistance, type = "mean_sd")
 # visualization
 bxp <- ggpaired(meanData, x = "hiding", y = "meanDistance", order = c("Nohide", "Hide"),
                 ylab = "meanDistance", xlab = "hiding")
@@ -96,7 +97,8 @@ names(meanData) <- c("id", "half", "meanDistance")
 # summary statistics
 meanData %>%
   group_by(half) %>%
-  get_summary_stats(meanDistance, type = "median_iqr")
+  # get_summary_stats(meanDistance, type = "median_iqr") # %>%
+  get_summary_stats(meanDistance, type = "mean_sd")
 # visualization
 bxp <- ggpaired(meanData, x = "half", y = "meanDistance", order = c("first half", "second half"),
                 ylab = "meanDistance", xlab = "half")
@@ -156,11 +158,12 @@ for (cf in files) {
 velo <- append(0, sqrt((diff(trajNohide$x))^2 + (diff(trajNohide$y))^2) * trajNohide$frameRate[2:nrow(trajNohide)])
 dire <- append(0, atan2(diff(trajNohide$y),diff(trajNohide$x)))
 trajNohide_v <- trajNohide %>% mutate(velo) %>% mutate(dire)
-hist1 <- ggplot(data=trajNohide_v, aes(velo)) + geom_histogram(binwidth = 2) + # speed in pixels/sec
+tNh_v <- trajNohide_v %>% filter(abs(velo)>.001) %>% filter(abs(dire)>.001 & abs(dire)<3.141) %>% filter(abs(dire)<1.57 | abs(dire)>1.58) 
+hist1 <- ggplot(data=tNh_v, aes(velo)) + geom_histogram(binwidth = 2) + # speed in pixels/sec
   coord_cartesian(xlim = c(0.0,200)) + xlab("velocity") + ylab("") +
   theme(aspect.ratio=1/1)
 hist1
-polar1 <- ggplot(data=trajNohide_v, aes(dire)) + geom_histogram(binwidth = pi/90) + # binwidth = 2 degrees
+polar1 <- ggplot(data=tNh_v, aes(dire)) + geom_histogram(binwidth = 3*pi/90) + # binwidth = 3 degrees
   coord_polar(start=pi/2,direction=-1) + xlim(-pi,pi) + xlab("") + ylab("") +
   theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
 polar1

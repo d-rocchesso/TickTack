@@ -328,3 +328,8 @@ void cpioi(char dir) {
     if (dir=='H') ioiH[i] = ioi[i];
     else ioiV[i] = ioi[i];
 }
+
+void mouseClicked(){
+   print("*** x = " + mouseX + " y = " + mouseY + "\n"); 
+   print("***** width = " + width + " height = " + height + "\n");
+}
