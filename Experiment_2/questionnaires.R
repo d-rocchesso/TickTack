@@ -204,11 +204,37 @@ nasatlx <- nasatlx %>%   # participant 15
   add_row(part=15, order=2, hide=1, question=4, answer=4) %>%
   add_row(part=15, order=2, hide=1, question=5, answer=7) %>%
   add_row(part=15, order=2, hide=1, question=6, answer=2) 
+nasatlx <- nasatlx %>%   # participant 16
+  add_row(part=16, order=1, hide=1, question=1, answer=7) %>% 
+  add_row(part=16, order=1, hide=1, question=2, answer=-4) %>%
+  add_row(part=16, order=1, hide=1, question=3, answer=1) %>%
+  add_row(part=16, order=1, hide=1, question=4, answer=-3) %>%
+  add_row(part=16, order=1, hide=1, question=5, answer=9) %>%
+  add_row(part=16, order=1, hide=1, question=6, answer=-5) %>%
+  add_row(part=16, order=2, hide=0, question=1, answer=5) %>%
+  add_row(part=16, order=2, hide=0, question=2, answer=-4) %>%
+  add_row(part=16, order=2, hide=0, question=3, answer=-1) %>%
+  add_row(part=16, order=2, hide=0, question=4, answer=-7) %>%
+  add_row(part=16, order=2, hide=0, question=5, answer=8) %>%
+  add_row(part=16, order=2, hide=0, question=6, answer=-4) 
+nasatlx <- nasatlx %>%   # participant 17
+  add_row(part=17, order=1, hide=1, question=1, answer=-5) %>% 
+  add_row(part=17, order=1, hide=1, question=2, answer=-8) %>%
+  add_row(part=17, order=1, hide=1, question=3, answer=-2) %>%
+  add_row(part=17, order=1, hide=1, question=4, answer=-6) %>%
+  add_row(part=17, order=1, hide=1, question=5, answer=-2) %>%
+  add_row(part=17, order=1, hide=1, question=6, answer=-5) %>%
+  add_row(part=17, order=2, hide=0, question=1, answer=-6) %>%
+  add_row(part=17, order=2, hide=0, question=2, answer=-8) %>%
+  add_row(part=17, order=2, hide=0, question=3, answer=-3) %>%
+  add_row(part=17, order=2, hide=0, question=4, answer=-7) %>%
+  add_row(part=17, order=2, hide=0, question=5, answer=-5) %>%
+  add_row(part=17, order=2, hide=0, question=6, answer=-7) 
 aggregate(nasatlx[nasatlx$part!=exclude,], by = list(nasatlx$question[nasatlx$part!=exclude]), FUN = mean)
 
 # --------- testing differences between Hide and noHide
 # --------- non parametric testing 
-questionN <- 6 # set the question number here (1 to 6)
+questionN <- 1 # set the question number here (1 to 6)
 nasaNoHide <- nasatlx$answer[nasatlx$hide == 0 & nasatlx$question == questionN]
 nasaHide <- nasatlx$answer[nasatlx$hide == 1 & nasatlx$question == questionN]
 # datagroups
@@ -240,7 +266,7 @@ bxp + stat_pvalue_manual(stat.test, tip.length = 0) + labs(subtitle = get_test_l
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
-questionN <- 6# set the question number here (1 to 6)
+questionN <- 6 # set the question number here (1 to 6)
 nasa1 <- nasatlx$answer[nasatlx$part!=exclude & nasatlx$order == 1 & nasatlx$question == questionN]
 nasa2 <- nasatlx$answer[nasatlx$part!=exclude & nasatlx$order == 2 & nasatlx$question == questionN]
 # datagroups
