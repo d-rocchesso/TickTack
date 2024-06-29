@@ -56,15 +56,15 @@ Table table;
 Table ghostTable;
 
 void setup() {
-  fullScreen();
+  fullScreen(2);
   // size(2560,1200);
   // size(1920,1080);
   Sound.list();
   // Sound s = new Sound(this);
   // s.outputDevice(11); 
   MidiBus.list(); // List all available Midi devices on STDOUT. This will show each device's index and name.
-  myBus = new MidiBus(this, "Xjam", "Real Time Sequencer");
-  // myBus = new MidiBus(this, "K-Board", "Real Time Sequencer");
+  // myBus = new MidiBus(this, "Xjam", "Real Time Sequencer");
+  myBus = new MidiBus(this, "K-Board", "Real Time Sequencer");
   scale = float(width)/WIDTH; 
   print("scale = " + scale + "\n");
   noStroke();
