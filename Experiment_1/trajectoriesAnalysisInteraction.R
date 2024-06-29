@@ -4,6 +4,7 @@ library(ggpubr)
 library(patchwork)
 library(R.utils)
 library(lubridate)
+library(pwr)
 scale = 0.5625
 # Compute distance to target and statistics for 2 and 3 taps
 setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_1/")
@@ -90,6 +91,9 @@ get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 print("The mean distance was not statistically significantly different between 2 and 3 taps, F(1, 9) = 4.469, n.s., eta2[g] = 0.169.")
 
+# Power of the test, indicating ideal number of participants
+power.t.test(delta=35, sd=100, power=.85, type="paired", alternative="two.sided",sig.level=0.05)
+pwr.t.test(n=10,d=0.8,type='paired',sig.level=0.05)
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
@@ -146,6 +150,10 @@ res.aov <- anova_test(data = meanData, dv = meanDistance, wid = id, within = hal
 get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 print("The mean distance was statistically significantly different between first and second half, F(1, 9) = 9.639, p = 0.013, eta2[g] = 0.264.")
+
+# Power of the test, indicating ideal number of participants
+power.t.test(delta=43, sd=47, power=.85, type="paired", alternative="two.sided",sig.level=0.05)
+pwr.t.test(n=10,d=0.9,type='paired',sig.level=0.05)
 
 # ******* mixed anova ******
 # Hiding (true or false) is within subjects
@@ -224,6 +232,14 @@ bxp2 <- ggboxplot(distancesInt, x="half", "y=mean", color="first", add="mean_se"
 # bxp2 <- ggboxplot(distancesInt, x="half", "y=mean", color="taps", add="mean_se", ylab="mean distance") 
 # bxp2 + stat_pvalue_manual(pwc2, tip.length=0, hide.ns=TRUE)
 bxp2
+
+# First and second half separately
+ow1 <- anova_test(data = distancesInt[distancesInt$half == '1',], mean ~ first)
+get_anova_table(ow1)
+ow2 <- anova_test(data = distancesInt[distancesInt$half == '2',], mean ~ first)
+get_anova_table(ow2)
+
+
 
 # Compute histograms of magnitude velocity and direction during exploration
 files <- list.files(".", pattern="path_[0-9]+.csv", recursive=TRUE, full.names=TRUE, include.dirs=TRUE)

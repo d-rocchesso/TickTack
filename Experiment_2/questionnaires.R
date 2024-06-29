@@ -234,7 +234,7 @@ aggregate(nasatlx[nasatlx$part!=exclude,], by = list(nasatlx$question[nasatlx$pa
 
 # --------- testing differences between Hide and noHide
 # --------- non parametric testing 
-questionN <- 1 # set the question number here (1 to 6)
+questionN <- 6 # set the question number here (1 to 6)
 nasaNoHide <- nasatlx$answer[nasatlx$hide == 0 & nasatlx$question == questionN]
 nasaHide <- nasatlx$answer[nasatlx$hide == 1 & nasatlx$question == questionN]
 # datagroups

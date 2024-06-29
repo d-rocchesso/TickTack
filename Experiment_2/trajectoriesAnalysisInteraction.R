@@ -4,6 +4,7 @@ library(ggpubr)
 library(patchwork)
 library(R.utils)
 library(lubridate)
+library(pwr)
 scale = 0.5625
 # Compute distance to target and statistics for hide and noHide 
 setwd("/Users/roc/Research/DrawRhythm/TickTack/Experiment_2/")
@@ -41,7 +42,7 @@ for (cf in files) {
     print(ggplot(data=traj) + geom_point(mapping=aes(x=x,y=y,color="red"),shape=20,alpha=0.03) + 
             geom_point(mapping=aes(x=xGhost,y=yGhost), color="blue", shape=20, size=0.6, alpha=0.03) +
             theme(legend.position="none"))
-  readline()
+  # readline()
   distTraj <- sqrt((traj$x - traj$xGhost)^2 + (traj$y - traj$yGhost)^2)
   summary(distTraj)
   
@@ -116,6 +117,9 @@ get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 # print("The mean distance was not statistically significantly different between Hiding and Nohiding, F(1, 2) = 1.092, n.s., eta2[g] = 0.161.")
 
+# Power of the test, indicating ideal number of participants
+power.t.test(delta=8, sd=40, power=.85, type="paired", alternative="two.sided",sig.level=0.05)
+pwr.t.test(n=16,d=0.8,type='paired',sig.level=0.05)
 
 # --------- testing the progress between first and second half
 # --------- non parametric testing 
@@ -173,6 +177,10 @@ res.aov <- anova_test(data = meanData, dv = meanDistance, wid = id, within = hal
 get_anova_table(res.aov)
 # ges is the generalized effect size (amount of variability due to the within-subjects factor)
 # print("The mean distance was not statistically significantly different between first and second half, F(1, 2) = 0.621, p = 0.013, eta2[g] = 0.264.")
+
+# Power of the test, indicating ideal number of participants
+power.t.test(delta=19, sd=41.76, power=.85, type="paired", alternative="two.sided",sig.level=0.05)
+
 
 # ******* mixed anova ******
 # Hiding (true or false) is within subjects
@@ -248,6 +256,12 @@ ggboxplot(distancesInt, x="half", "y=mean", color="hideFirst", add="mean_se", yl
 int.aov <- anova_test(distancesInt, dv=mean, wid=subject, between=hideFirst, within=hiding)
 get_anova_table(int.aov)
 summary(int.aov)
+
+# First and second half separately
+ow1 <- anova_test(data = distancesInt[distancesInt$half == '1',], mean ~ hiding)
+get_anova_table(ow1)
+ow2 <- anova_test(data = distancesInt[distancesInt$half == '2',], mean ~ hiding)
+get_anova_table(ow2)
 
 
 # Compute histograms of magnitude velocity and direction during exploration
